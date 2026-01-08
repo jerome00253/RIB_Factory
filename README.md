@@ -8,6 +8,21 @@ Conçu pour l'automatisation et la fiabilité, il transforme des documents (PDF,
 
 ---
 
+## 📸 Aperçu
+
+<div align="center">
+  <img src="assets/upload_zone.png" alt="Zone de Téléversement" width="80%" />
+  <p><em>Zone de dépot moderne et fluide</em></p>
+  <br/>
+  <img src="assets/dashboard.png" alt="Tableau de Bord" width="80%" />
+  <p><em>Traitement par lot avec status de validation en temps réel</em></p>
+  <br/>
+  <img src="assets/detail_modal.png" alt="Détail de l'analyse" width="80%" />
+  <p><em>Inspection détaillée avec zoom et confiance OCR</em></p>
+</div>
+
+---
+
 ## ✨ Fonctionnalités Clés
 
 ### 🔍 Analyse & OCR
