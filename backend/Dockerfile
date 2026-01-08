@@ -1,5 +1,22 @@
-FROM python:3.10-bookworm
+# Stage 1: Build Frontend
+FROM node:22-alpine AS frontend-builder
+WORKDIR /app/frontend
 
+# Copy frontend dependency definitions
+COPY frontend/package*.json ./
+
+# Install dependencies (clean install)
+RUN npm ci
+
+# Copy frontend source code
+COPY frontend/ .
+
+# Build static files (output: "export" -> /out)
+RUN npm run build
+
+
+# Stage 2: Backend Runtime
+FROM python:3.10-bookworm
 WORKDIR /app
 
 # Install system dependencies needed for Doctr and OpenCV
@@ -14,10 +31,20 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Copy backend requirements
+COPY backend/requirements.txt .
 
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy backend source code
+COPY backend/ .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Copy built frontend assets from Stage 1 to where FastAPI expects them
+COPY --from=frontend-builder /app/frontend/out /app/static
+
+# Expose port
+EXPOSE 8000
+
+# Run uvicorn (production mode)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

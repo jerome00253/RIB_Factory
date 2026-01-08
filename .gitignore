@@ -32,3 +32,7 @@ build/
 
 # Docker
 portainer_data/
+
+# Local Scripts
+publish_docker.ps1
+test_single_image.ps1

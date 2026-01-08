@@ -21,7 +21,7 @@ export async function analyzeRib(file: File): Promise<AnalyzeResponse[]> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch('http://localhost:8000/api/v1/analyze', {
+  const response = await fetch('/api/v1/analyze', {
     method: 'POST',
     body: formData,
   });
