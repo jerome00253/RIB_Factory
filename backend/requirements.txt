@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+python-doctr[torch]
+opencv-python-headless
+pandas
+openpyxl
+pdf2image
+schwifty
+python-stdnum
