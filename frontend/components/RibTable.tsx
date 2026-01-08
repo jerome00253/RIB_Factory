@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import { AnalyzeResponse } from '../lib/api';
 
@@ -15,6 +15,7 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
         <table className="w-full text-left text-sm">
           <thead className="bg-gradient-to-r from-gray-50 to-blue-50/30 border-b-2 border-blue-100">
             <tr>
+              <th className="px-6 py-4 font-bold text-gray-800 text-sm">Aperçu</th>
               <th className="px-6 py-4 font-bold text-gray-800 text-sm">Fichier</th>
               <th className="px-6 py-4 font-bold text-gray-800 text-sm">Titulaire</th>
               <th className="px-6 py-4 font-bold text-gray-800 text-sm">Détails Bancaires</th>
@@ -29,6 +30,9 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
               if (error) {
                  return (
                     <tr key={index} className="hover:bg-red-50/50">
+                        <td className="px-6 py-4">
+                            <FileThumbnail file={file} onClick={() => onShowDetail(index)} />
+                        </td>
                         <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[150px]">{file.name}</td>
                         <td colSpan={4} className="px-6 py-4 text-red-500 italic">{error}</td>
                         <td className="px-6 py-4 text-right"></td>
@@ -39,6 +43,9 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
               if (!response) {
                   return (
                     <tr key={index} className="animate-pulse">
+                        <td className="px-6 py-4">
+                             <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse" />
+                        </td>
                         <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[150px]">{file.name}</td>
                         <td colSpan={5} className="px-6 py-4 text-gray-400 italic">Analyse en cours...</td>
                     </tr>
@@ -50,6 +57,9 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
               
               return (
                 <tr key={index} className="hover:bg-gray-50 transition-colors group">
+                  <td className="px-6 py-4">
+                      <FileThumbnail file={file} onClick={() => onShowDetail(index)} />
+                  </td>
                   <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[150px]" title={file.name}>
                     {file.name}
                   </td>
@@ -102,13 +112,6 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button 
-                          onClick={() => onShowDetail(index)}
-                          className="group/btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200"
-                      >
-                          Détail
-                          <Icon icon="mdi:chevron-right" className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-                      </button>
-                      <button 
                           onClick={() => onDelete(index)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Supprimer"
@@ -123,6 +126,33 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function FileThumbnail({ file, onClick }: { file: File, onClick: () => void }) {
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [file]);
+
+  return (
+    <div 
+      onClick={onClick}
+      className="w-12 h-12 rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 hover:shadow-md transition-all bg-gray-50 flex items-center justify-center group/thumb relative"
+      title="Voir l'aperçu"
+    >
+      {file.type.startsWith('image/') && preview ? (
+        <img src={preview} alt="Aperçu" className="w-full h-full object-cover" />
+      ) : (
+        <Icon icon="mdi:file-pdf-box" className="w-8 h-8 text-red-500 group-hover/thumb:scale-110 transition-transform" />
+      )}
+      <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/10 transition-colors" />
     </div>
   );
 }
