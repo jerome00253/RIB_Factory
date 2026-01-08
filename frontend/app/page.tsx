@@ -9,7 +9,10 @@ import { RibDetailModal } from '../components/RibDetailModal';
 import { analyzeRib, AnalyzeResponse } from '../lib/api';
 import * as XLSX from 'xlsx';
 
+import { v4 as uuidv4 } from 'uuid';
+
 interface ProcessedFile {
+  id: string;
   file: File;
   status: 'pending' | 'processing' | 'done' | 'error';
   response: AnalyzeResponse | null;
@@ -23,29 +26,50 @@ export default function Home() {
 
   const handleFilesSelect = (files: File[]) => {
     const newItems: ProcessedFile[] = files.map(file => ({
+      id: uuidv4(),
       file,
       status: 'pending',
       response: null
     }));
-    // Capture current length BEFORE appending
-    const currentLength = items.length;
-    // Append to existing items instead of replacing
+    
     setItems(prev => [...prev, ...newItems]);
-    processQueue(newItems, currentLength);
+    processQueue(newItems);
   };
 
-  const processQueue = async (queue: ProcessedFile[], startIndex: number) => {
+  const processQueue = async (queue: ProcessedFile[]) => {
     setIsProcessing(true);
-    for (let i = 0; i < queue.length; i++) {
-        const file = queue[i].file;
-        const actualIndex = startIndex + i;
-        setItems(prev => prev.map((item, idx) => idx === actualIndex ? { ...item, status: 'processing' } : item));
+    
+    // We iterate through the queue of *new* items
+    for (const queueItem of queue) {
+        // Mark current item as processing
+        setItems(prev => prev.map(item => item.id === queueItem.id ? { ...item, status: 'processing' } : item));
+        
         try {
-            const result = await analyzeRib(file);
-            setItems(prev => prev.map((item, idx) => idx === actualIndex ? { ...item, status: 'done', response: result } : item));
+            const results = await analyzeRib(queueItem.file);
+            
+            setItems(prev => {
+                const index = prev.findIndex(p => p.id === queueItem.id);
+                if (index === -1) return prev; // Item removed?
+
+                // Create new items from the results
+                const expandedItems: ProcessedFile[] = results.map((res, i) => ({
+                    id: i === 0 ? queueItem.id : uuidv4(), // Keep original ID for first item, new IDs for others
+                    file: queueItem.file,
+                    status: 'done',
+                    response: res
+                }));
+                
+                // Replace the single processing item with the expanded items (1 or more)
+                // Use toSpliced? Or slice/concat. 
+                // Note: toSpliced is newer, sticking to safe destructing
+                const newItems = [...prev];
+                newItems.splice(index, 1, ...expandedItems);
+                return newItems;
+            });
+
         } catch (err: any) {
              const errorMsg = err.message || "Erreur inconnue";
-             setItems(prev => prev.map((item, idx) => idx === actualIndex ? { ...item, status: 'error', error: errorMsg } : item));
+             setItems(prev => prev.map(item => item.id === queueItem.id ? { ...item, status: 'error', error: errorMsg } : item));
         }
     }
     setIsProcessing(false);
@@ -71,7 +95,7 @@ export default function Home() {
     if (items.length === 0) return;
 
     const data = items.map(item => ({
-        'Fichier': item.file.name,
+        'Fichier': item.file.name + (item.response?.page_number ? ` (Page ${item.response.page_number})` : ''),
         'Statut': item.status,
         'Titulaire': item.response?.data.owner_name || (item.error ? 'Erreur' : ''),
         'IBAN': item.response?.data.iban || '',
@@ -86,7 +110,7 @@ export default function Home() {
     const ws = XLSX.utils.json_to_sheet(data);
     
     const wscols = [
-        {wch: 30}, {wch: 10}, {wch: 25}, {wch: 30}, {wch: 12}, 
+        {wch: 35}, {wch: 10}, {wch: 25}, {wch: 30}, {wch: 12}, 
         {wch: 20}, {wch: 10}, {wch: 25}, {wch: 15}
     ];
     ws['!cols'] = wscols;

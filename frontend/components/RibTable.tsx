@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import { AnalyzeResponse } from '../lib/api';
+import { formatIBAN } from '../lib/formatters'; // Add missing import
 
 interface RibTableProps {
   results: { file: File; response: AnalyzeResponse | null; error?: string }[];
@@ -46,8 +47,14 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
                         <td className="px-6 py-4">
                              <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse" />
                         </td>
-                        <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[150px]">{file.name}</td>
-                        <td colSpan={5} className="px-6 py-4 text-gray-400 italic">Analyse en cours...</td>
+                        <td className="px-6 py-4">
+                            <div className="font-semibold text-sm text-gray-900 truncate" title={item.file.name}>
+                              {item.file.name}
+                              {item.response?.page_number && <span className="text-gray-500 ml-1">(Page {item.response.page_number})</span>}
+                            </div>
+                            <div className="text-xs text-gray-500">{(item.file.size / 1024).toFixed(0)} KB</div>
+                        </td>
+                        <td colSpan={4} className="px-6 py-4 text-gray-400 italic">Analyse en cours...</td>
                     </tr>
                   )
               }
@@ -83,7 +90,7 @@ export function RibTable({ results, onShowDetail, onDelete }: RibTableProps) {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col space-y-1.5 w-full">
-                         <DataRow label="IBAN" value={response.data.iban} />
+                         <DataRow label="IBAN" value={response.data.iban} displayValue={formatIBAN(response.data.iban)} />
                          <DataRow label="BIC" value={response.data.bic} />
                          <DataRow label="BANQUE" value={response.data.bank_name} />
                     </div>
@@ -201,7 +208,15 @@ function StatusBadge({ method, status }: { method: string | undefined | null, st
     )
 }
 
-function DataRow({ label, value }: { label: string, value: string | null | undefined }) {
+
+
+interface DataRowProps {
+    label: string;
+    value: string | null | undefined;
+    displayValue?: string;
+}
+
+function DataRow({ label, value, displayValue }: DataRowProps) {
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent row click
         if (value) {
@@ -215,7 +230,7 @@ function DataRow({ label, value }: { label: string, value: string | null | undef
              <span className="text-[10px] font-bold text-gray-400 w-14 uppercase tracking-wider">{label}</span>
              <div className="flex items-center gap-2 flex-1 min-w-0">
                  <span className={`text-xs truncate ${!value ? "text-gray-300 italic" : "text-gray-700 font-mono"}`}>
-                    {value || "N/A"}
+                    {displayValue || value || "N/A"}
                  </span>
                  {value && (
                     <button 

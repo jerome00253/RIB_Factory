@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
-import { AnalyzeResponse } from '../lib/api';
+import { AnalyzeResponse } from '../lib/api'; // Restore missing import
+import { formatIBAN } from '../lib/formatters'; // Add missing import
 import { useState, useEffect, useRef } from 'react';
 
 function ImagePanZoom({ src }: { src: string }) {
@@ -111,9 +112,16 @@ export function RibDetailModal({ file, result, onClose }: RibDetailModalProps) {
   useEffect(() => {
     if (!file) return;
     const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
+    
+    // Append #page=X if result has a page number and it's a PDF
+    if (file.type === 'application/pdf' && result?.page_number) {
+        setPreviewUrl(`${objectUrl}#page=${result.page_number}`);
+    } else {
+        setPreviewUrl(objectUrl);
+    }
+
     return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
+  }, [file, result]);
 
 
 
@@ -182,8 +190,11 @@ export function RibDetailModal({ file, result, onClose }: RibDetailModalProps) {
                     </div>
                 </div>
 
+
+
+// ...
                  <div className="space-y-4">
-                    <DetailRow label="IBAN" value={result.data.iban} copyable />
+                    <DetailRow label="IBAN" value={result.data.iban} displayValue={formatIBAN(result.data.iban)} copyable />
                     <DetailRow label="BIC" value={result.data.bic} copyable />
                     <DetailRow label="Titulaire" value={result.data.owner_name} copyable />
                     <DetailRow label="Banque" value={result.data.bank_name} copyable />
@@ -235,14 +246,14 @@ export function RibDetailModal({ file, result, onClose }: RibDetailModalProps) {
   );
 }
 
-function DetailRow({ label, value, copyable }: { label: string, value: string | null, copyable?: boolean }) {
+function DetailRow({ label, value, displayValue, copyable }: { label: string, value: string | null, displayValue?: string, copyable?: boolean }) {
     const handleCopy = () => { if(value) navigator.clipboard.writeText(value); }
     return (
         <div className="group flex items-start justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
             <span className="text-sm text-gray-500 font-medium pt-0.5">{label}</span>
             <div className="flex items-center gap-2 max-w-[70%]">
                 <span className={`text-sm font-mono text-gray-900 break-all text-right ${!value && "opacity-50 italic"}`}>
-                    {value || "Non trouvé"}
+                    {displayValue || value || "Non trouvé"}
                 </span>
                  {copyable && value && (
                     <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-600">

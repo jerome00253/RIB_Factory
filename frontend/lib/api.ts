@@ -12,11 +12,12 @@ export interface AnalyzeResponse {
   checksum_valid: boolean;
   rib_key_valid?: boolean | null;
   validation_details?: string[] | null;
+  page_number?: number | null;
   data: RibData;
   message: string | null;
 }
 
-export async function analyzeRib(file: File): Promise<AnalyzeResponse> {
+export async function analyzeRib(file: File): Promise<AnalyzeResponse[]> {
   const formData = new FormData();
   formData.append('file', file);
 

@@ -20,5 +20,6 @@ class AnalyzeResponse(BaseModel):
     checksum_valid: bool = Field(False, description="Indicates if the found IBAN passed the checksum validation")
     rib_key_valid: Optional[bool] = Field(None, description="Indicates if the French RIB key is valid (France only)")
     validation_details: Optional[list[str]] = Field(None, description="List of specific validation errors or details")
+    page_number: Optional[int] = Field(None, description="Page number if extracted from a multi-page document")
     data: RibData
     message: Optional[str] = None
