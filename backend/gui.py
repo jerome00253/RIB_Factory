@@ -167,15 +167,13 @@ class RibFactoryGUI:
                              fg=self.accent_color, bg="#ececec", 
                              font=("Segoe UI", 9, "underline"), cursor="hand2")
         github_btn.pack(side=tk.RIGHT, padx=20, pady=12)
-        github_btn.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/jerome0025/RIB"))
+        github_btn.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/jerome00253/RIB_Factory"))
 
     def run_server(self):
         try:
-            print("DEBUG: Starting server initialization...")
             # Monitoring loop for OCR model (internal check)
             self.root.after(2000, self.check_ocr_status)
             
-            print("DEBUG: Creating uvicorn config...")
             # Don't use custom log_config - let uvicorn handle it with defaults
             config = uvicorn.Config(
                 app, 
@@ -184,13 +182,10 @@ class RibFactoryGUI:
                 log_level="info",
                 access_log=False  # Disable access logs for cleaner output
             )
-            print("DEBUG: Creating uvicorn server...")
             server = uvicorn.Server(config)
             
-            print("DEBUG: Server ready, updating status...")
             self.root.after(0, self.update_server_status, "En ligne", self.success_color)
             
-            print("DEBUG: Starting server.run()...")
             server.run()
         except Exception as e:
             print(f"CRITICAL ERROR: {e}")
@@ -199,19 +194,21 @@ class RibFactoryGUI:
             self.root.after(0, self.update_server_status, "Erreur", "#e74c3c")
 
     def check_ocr_status(self):
-        # We try to see if OCRService instance is created and model is loaded
-        # Since it's a singleton, we check without triggering it
+        """Check if OCR model is loaded and mark it as ready."""
         try:
             from app.services.ocr import OCRService
-            # In Tkinter main loop, we check periodicially
-            if OCRService._model is not None:
+            # Check if the singleton instance exists and model is loaded
+            if OCRService._instance is not None and OCRService._model is not None:
                 self.ocr_status_ind.configure(fg=self.success_color)
                 self.ocr_status_txt.configure(text="IA OCR: Prêt")
+                # Stop checking once ready
+                return
             else:
                 self.ocr_status_ind.configure(fg=self.warning_color)
                 self.ocr_status_txt.configure(text="IA OCR: Chargement...")
+                # Keep checking every second
                 self.root.after(1000, self.check_ocr_status)
-        except:
+        except Exception as e:
             self.root.after(1000, self.check_ocr_status)
 
     def update_server_status(self, text, color):
